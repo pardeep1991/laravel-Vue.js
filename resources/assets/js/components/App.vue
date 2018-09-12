@@ -3,7 +3,7 @@
         <el-header>
             <el-row>
                 <el-col :span="3" class="logo"> 
-                    <span><i class="el-icon-search"></i> Keyword Finder</span>
+                    <span><i class="el-icon-search"></i> URL Finder</span>
                 </el-col>
                 <el-col :span="21">
                     <el-menu :default-active="active" mode="horizontal" @select="handleSelect">

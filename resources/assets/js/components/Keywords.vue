@@ -7,6 +7,13 @@
             <el-form :model="form">
                 <el-form-item label="Keyword">
                     <el-input type="textarea" v-model="form.keywords" auto-complete="off" :rows=5></el-input>
+                    <el-upload
+                        ref="upload"
+                        action="#"
+                        :auto-upload="false"
+                        :http-request="handleKeywordFileUpload">
+                        <el-button size="small" type="primary">From file</el-button>
+                    </el-upload>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -172,21 +179,37 @@ export default {
                 keywordResultNumberOptions: [10,20,50]
             }
         },
-        handleKeywordCreateConfirm: async function() {
-            let keywords = this.form.keywords.split('\n').map(e => e.trim())
-            for(let keyword of keywords) {
-                try {
-                    await this.createKeyword(keyword)
-                } catch(err) {
-                    console.log(err)
+        handleKeywordFileUpload: async function (file) {
+            return new Promise((resolve) => {
+                if (file) {
+                    let reader = new FileReader();
+                    reader.readAsText(file.raw);
+                    reader.onload = (e) => {
+                        resolve(e.target.result)
+                    }
+                } else {
+                    resolve('')
                 }
-            }
-            await this.getKeywords(this.current_page)
-            this.isCreate = false
-            this.$message({
-                message: 'Create keywords success!',
-                type: 'success'
             })
+        },
+        handleKeywordCreateConfirm: async function() {
+            let keywords = ((
+                    await this.handleKeywordFileUpload(this.$refs.upload.uploadFiles.pop()) 
+                    + (this.form.keywords || '')
+                ) || '').split('\n').filter(e => e.trim()).map(e => ({
+                keyword: e.trim()
+            }))
+            if (keywords.length > 0) {
+                await this.createKeywords(keywords)
+                await this.getKeywords(this.current_page)
+                this.isCreate = false
+                this.$message({
+                    message: 'Create keywords success!',
+                    type: 'success'
+                })
+            } else {
+                this.isCreate = false
+            }
         },
         handleKeywordEditConfirm: async function() {
             await this.updateKeyword(this.form)
@@ -216,10 +239,8 @@ export default {
         handlePageChange: async function(page) {
             await this.getKeywords(page)
         },
-        createKeyword: function(data) {
-            return http.post(`/api/keywords`, {
-                keyword: data
-            })
+        createKeywords: function(data) {
+            return http.post(`/api/keywords`, data)
         },
         getKeywords: function(page) {
             return http.get(`/api/keywords?page=${page}`).then(resp => {

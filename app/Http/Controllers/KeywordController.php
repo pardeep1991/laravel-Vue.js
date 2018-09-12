@@ -16,8 +16,10 @@ class KeywordController extends Controller
     }
 
     public function store(Request $request) {
-        $keyword = Keyword::create($request->all());
-        return response()->json($keyword, 201);
+        foreach ($request->all() as $keyword) {
+            Keyword::firstOrCreate($keyword);
+        }
+        return response()->json(null, 201);
     }
 
     public function update(Request $request, Keyword $keyword) {
